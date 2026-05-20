@@ -132,7 +132,8 @@ if env['HAVE_DRAMSYS']:
 SimObject('MemChecker.py', sim_objects=['MemChecker', 'MemCheckerMonitor'])
 Source('mem_checker.cc')
 Source('mem_checker_monitor.cc')
-
+Source('aurora_tm.cc')
+SimObject('AuroraTM.py', sim_objects=['AuroraTM'])
 DebugFlag('AddrRanges')
 DebugFlag('BaseXBar')
 DebugFlag('CoherentXBar')

@@ -1,0 +1,16 @@
+{
+  "dataset": "mnist_784",
+  "accuracy": 69.0,
+  "mean_fraction": 0.13720280612244898,
+  "std_fraction": 0.06248454894132612,
+  "min_fraction": 0.010841836734693877,
+  "max_fraction": 0.43686224489795916,
+  "num_clauses": 100,
+  "num_literals": 1568,
+  "num_classes": 10,
+  "num_samples": 100,
+  "per_request_file": "gem5/configs/wired_or/tm_summary_per_request.npy",
+  "per_request_mean": 0.007281976751983166,
+  "per_request_std": 0.008000107482075691,
+  "per_request_total": 100000
+}

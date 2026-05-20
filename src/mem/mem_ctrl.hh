@@ -261,7 +261,7 @@ class MemCtrl : public qos::MemCtrl
         void disableSanityCheck();
 
       protected:
-
+        
         Tick recvAtomic(PacketPtr pkt) override;
         Tick recvAtomicBackdoor(
                 PacketPtr pkt, MemBackdoorPtr &backdoor) override;
@@ -502,6 +502,13 @@ class MemCtrl : public qos::MemCtrl
 +    * Create pointer to interface of the actual memory media when connected
 +    */
     MemInterface* dram;
+    /** Wired-OR inference mode parameters */
+    bool inferenceMode;
+    int rowCount;
+    double activeFraction;
+
+    Tick rowCapPenalty;
+    Tick dischargeConst;
 
     virtual AddrRangeList getAddrRanges();
 

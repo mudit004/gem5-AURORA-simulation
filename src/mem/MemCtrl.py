@@ -101,6 +101,19 @@ class MemCtrl(QoSMemCtrl):
 
     command_window = Param.Latency("10ns", "Static backend latency")
     disable_sanity_check = Param.Bool(False, "Disable port resp Q size check")
+    #========================================================================================================================================================#
+    # Updates for the wired-OR latency model
+    inference_mode = Param.Bool(False, "Enable wired OR inference mode")
+
+    row_count = Param.Int(32, "Number of rows activated concurrently")
+
+    active_fraction = Param.Float(0.5, "Fraction of rows that discharge")
+
+    row_cap_penalty = Param.Latency("0.1ns", "Penalty per row capacitance")
+
+    discharge_const = Param.Latency("5ns", "Base discharge penalty")
+
+    #========================================================================================================================================================#
 
 
 add_citation(

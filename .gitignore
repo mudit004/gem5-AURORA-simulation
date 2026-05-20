@@ -38,3 +38,16 @@ configs/dram/lowp_sweep.cfg
 .vscode
 typings
 .DS_Store
+
+run_pipeline.sh 
+results_memristor.txt 
+results_cmos.txt 
+results_aurora.txt 
+memristor_out.txt 
+cmos_out.txt 
+aurora_out.txt
+Presentation.md
+
+configs/wired_or/run_comparison.py 
+configs/wired_or/run_comparison_debug.py 
+configs/wired_or/run.py

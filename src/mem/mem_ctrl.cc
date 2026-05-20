@@ -77,7 +77,10 @@ MemCtrl::MemCtrl(const MemCtrlParams &p) :
     backendLatency(p.static_backend_latency),
     commandWindow(p.command_window),
     prevArrival(0),
-    stats(*this)
+    stats(*this),
+    inferenceMode(p.inference_mode),
+    rowCount(p.row_count), activeFraction(p.active_fraction),
+    rowCapPenalty(p.row_cap_penalty), dischargeConst(p.discharge_const)
 {
     DPRINTF(MemCtrl, "Setting up controller\n");
 
@@ -817,6 +820,62 @@ MemCtrl::doBurstAccess(MemPacket* mem_pkt, MemInterface* mem_intr)
     // we will wake up sooner than we have to.
     mem_intr->nextReqTime = mem_intr->nextBurstAt - mem_intr->commandOffset();
 
+
+
+    // ---------------- Wired-OR inference latency ----------------
+
+   if (inferenceMode) {
+ 
+        double active_paths =
+            static_cast<double>(rowCount) * activeFraction;
+ 
+        if (active_paths < 1.0)
+            active_paths = 1.0;
+ 
+        // BUG 3 FIX: rowCapPenalty is the *total* row-capacitance penalty
+        // (already a Tick, already accounts for array geometry).
+        // The old code did  rowCount * rowCapPenalty  which double-counted
+        // the number of rows: 256 rows × 200 ns = 51 200 ns per access —
+        // that is physically nonsensical and causes both MEMRISTOR and AURORA
+        // to smash into MAX_EXTRA immediately, making them look identical.
+        //   WRONG:  Tick cap_penalty = rowCount * rowCapPenalty;
+        //   RIGHT:
+        Tick cap_penalty = rowCapPenalty;
+ 
+        // BUG 4 FIX: The original code had an if/else keyed on rowCount <= 256.
+        // AURORA has rowCount = 512, so it fell into the else-branch which
+        // computed  rowCount * rowCapPenalty  — that is cap_penalty again, not
+        // a discharge penalty.  The correct formula for *both* architectures is
+        //   discharge_time = discharge_constant / number_of_active_paths
+        // (more active paths → faster wired-OR collapse → lower latency).
+        //   WRONG:
+        //     if (rowCount <= 256)
+        //         discharge_penalty = dischargeConst / active_paths;
+        //     else
+        //         discharge_penalty = rowCount * rowCapPenalty;   ← same as cap!
+        //   RIGHT:
+        Tick discharge_penalty =
+            static_cast<Tick>(
+                static_cast<double>(dischargeConst) / active_paths);
+ 
+        Tick extra_latency = cap_penalty + discharge_penalty;
+ 
+        if (extra_latency < 0)
+            extra_latency = 0;
+ 
+        // BUG 5 NOTE: MAX_EXTRA = 500 000 ticks = 500 ns.
+        // With BUG 3 fixed the values are now:
+        //   MEMRISTOR : 200 ns cap + ~10 ns discharge ≈ 210 ns  (<500 ns ✓)
+        //   AURORA-seq: 10 ns cap  + ~0.07 ns discharge ≈ 10 ns (<500 ns ✓)
+        // The cap is now correctly tight (prevents runaway on bad params)
+        // without flattening the meaningful MEMRISTOR vs AURORA difference.
+        const Tick MAX_EXTRA = 500000;
+        if (extra_latency > MAX_EXTRA)
+            extra_latency = MAX_EXTRA;
+ 
+        mem_pkt->readyTime += extra_latency;
+    }
+
     // Update the common bus stats
     if (mem_pkt->isRead()) {
         ++(mem_intr->readsThisTime);
@@ -832,6 +891,7 @@ MemCtrl::doBurstAccess(MemPacket* mem_pkt, MemInterface* mem_intr)
     }
 
     return cmd_at;
+
 }
 
 bool
